@@ -125,6 +125,8 @@ MouseMovement ourRobot::nextMovement(unsigned x, unsigned y, const Maze &maze) {
     } else {
         // If it gets to this point, our distances function needs to be updated so we have to re-run the floodfill algorithm
         runFloodfill(x, y);
+        std::cout << "x: " << x << " y: " << y << std::endl;
+        printMaze();
         return(bestMove(frontWall, rightWall, leftWall, x, y));
     }
 }
@@ -144,9 +146,6 @@ bool ourRobot::isAtCenter(unsigned x, unsigned y) const {
 
     // When none of the adjacent traversible cells has a lower distance than the current cell.
 void ourRobot::runFloodfill(unsigned int x, unsigned int y) {
-    
-    std::cout << "x: " << x << " y: " << y << std::endl;
-    printMaze();
 
     /*
      1) Look at possible adjacent cells and make the current cell 1 more than all the previous cells
@@ -178,24 +177,8 @@ void ourRobot::runFloodfill(unsigned int x, unsigned int y) {
         distances[x][y] = lowestAdjacent(x, y, possibleDirections);
     }
     
-//        new stack //Stack of cells to be processed (can also use queue)
-//        push current cell onto stack
-//        while stack is not empty:
-//            cur = top of the stack
-//            pop off top of the stack
-//            if cur.distance == 0, continue //don’t want to process the end goal
-//            min_distance = infinity //placeholder/”invalid” distance
-//            for each neighboring cell of cur:
-//                if no wall between cur and neighbor:
-//                    if neighbor.distance < min_distance:
-//        min_distance = neighbor.distance
-//            if min_distance == infinity: //something went wrong. terminate
-//                continue
-//            if cur.distance > min_distance: //everything is fine, move on
-//                Continue
-//            if cur.distance <= min_distance //we reach this point
-//            cur.distance = min_distance + 1 //new minimum distance
-//            push every neighbor onto stack
+//    std::cout << "x: " << x << " y: " << y << std::endl;
+//    printMaze();
 
 }
 
@@ -256,6 +239,7 @@ bool ourRobot::cellFinished(unsigned int x, unsigned int y) {
 
 // Determine which move will move the robot to a square with a lower distance to the center
 MouseMovement ourRobot::bestMove( bool frontWall, bool rightWall, bool leftWall, unsigned int x, unsigned int y) {
+    // check of moving forward decreases the distance
     if (!frontWall) {
         int forwardDistance = 1000;
         switch(heading) {
@@ -285,8 +269,8 @@ MouseMovement ourRobot::bestMove( bool frontWall, bool rightWall, bool leftWall,
             return (MoveForward);
         }
     }
+    // Check if moving right decreases the distance
     if (!rightWall) {
-        // Check if moving right decreases the distance
         int rightDistance = 1000;
         switch(heading) {
             case NORTH:
@@ -373,13 +357,14 @@ MouseMovement ourRobot::bestMove( bool frontWall, bool rightWall, bool leftWall,
         default: break;
     }
     if (backwardDistance < distances[x][y]) {
-        return (MoveBackward);
+        heading = opposite(heading);
+        return (TurnAround);
     }
     return(Wait);
 }
 
 void ourRobot::printMaze() {
-    std::string output;
+    std::string output = "Our vision of the maze: \n";
     for (int y = MazeDefinitions::MAZE_LEN - 1; y >= 0 ; y--) {
         // horizontal walls above the current row
         output += "  ";
@@ -402,7 +387,9 @@ void ourRobot::printMaze() {
             if (distances[x][y] < 10) {
                 output += " ";
             }
-            output += "  ";
+            if (distances[x][y] < 100) {
+                output += "  ";
+            }
         }
         // rightmost wall
         if (verticalWalls[MazeDefinitions::MAZE_LEN][y]) {
